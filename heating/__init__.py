@@ -49,3 +49,8 @@ class ScheduleManager:
 
     def start_hour(self) -> int:
         return int(self.string_from_url("http://timer.home:9990/start", 2))
+
+
+# Actually using the class
+heat_man_impl = HeatingManagerImpl()
+heat_man_impl.manage_heating("20", "25", True)
