@@ -22,30 +22,27 @@ class HeatingManagerImpl:
 
         It's doing too many things at once.
 
-        This method is responsible for doing the comparison operations to decide on/off, but also is responsible for opening sockets and sending the actual decision.
-        This means the comparison logic cannot be separately unit-tested because the function is trying to open a socket.
+        This method is responsible for immediately converting strings to floats, and does so without any error handling.
+        This method is responsible for opening sockets and sending the actual decision.
 
-        Finally as a nit, the function is immediately converting strings to floats, which means there is no error handling if a bad string gets passed in.
     '''
     def manage_heating(self, t: str, threshold: str, active: bool):
+        # TODO: error handling here
         f_t = float(t)
         f_threshold = float(threshold)
-        if f_t < f_threshold and active:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(('heater.home', 9999))
-                s.sendall(b'on')
-                s.close()
-            except Exception:
-                print('error connecting')
-        elif f_t > f_threshold and active:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(('heater.home', 9999))
-                s.sendall(b'off')
-                s.close()
-            except Exception:
-                print('error connecting')
+
+        required_action = HeatingManagerImpl.decide_required_action(f_t, f_threshold, active)
+        if required_action is "no action needed":
+            return
+
+        # Send the actual decision over
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(('heater.home', 9999))
+            s.sendall(str.encode(required_action))
+            s.close()
+        except Exception:
+            print('error connecting; failed to send {}'.format(required_action))
 
 
 class ScheduleManager:
